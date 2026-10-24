@@ -1,0 +1,761 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class EmployeeRepository {
+  static List<Map<String, dynamic>> employees = [
+    {
+      "id": "256951",
+      "nik": "6471011205850001",
+      "nama": "M. Ali Maskur",
+      "ttl": "Balikpapan, 12-05-1985",
+      "jenisKelamin": "Laki-laki",
+      "alamat": "Jl. Minyak No. 10, RT 05, Balikpapan",
+      "suku": "Banjar",
+      "agama": "Islam",
+      "kebangsaan": "Indonesia",
+      "statusPerkawinan": "Kawin",
+      "statusSekolah": "Strata 1 (S1)",
+      "namaAnak1": "Ahmad Zaki",
+      "namaAnak2": "Fatimah Zahra",
+      "namaAnak3": "-",
+      "namaAnak4": "-",
+      "namaAnak5": "-",
+      "namaAnak6": "-",
+      "namaIstri": "Siti Aminah",
+      "namaIbu": "Hj. Aminah",
+      "namaBapak": "H. Maskur",
+      "noBpjs": "0001234567890",
+      "noBpjsKes": "0009876543210",
+      "noNpwp": "12.345.678.9-021.000",
+      "noRekening": "1480001234567 (Mandiri)",
+      "noKtp": "6471011205850001",
+      "noSim": "8505-1234-000012",
+      "kodeSim": "B2 Umum",
+      "doh": "10-01-2015",
+      "poh": "Balikpapan",
+      "foto": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "jabatan": "admin",
+      "password": "256951",
+      "mustChange": true,
+      "failed": 0,
+    },
+    {
+      "id": "256771",
+      "nik": "6472022008900002",
+      "nama": "Mislimat",
+      "ttl": "Samarinda, 20-08-1990",
+      "jenisKelamin": "Laki-laki",
+      "alamat": "Jl. Soekarno Hatta KM. 3, Samarinda",
+      "suku": "Kutai",
+      "agama": "Islam",
+      "kebangsaan": "Indonesia",
+      "statusPerkawinan": "Kawin",
+      "statusSekolah": "SMA",
+      "namaAnak1": "Rizki Ramadhan",
+      "namaAnak2": "-",
+      "namaAnak3": "-",
+      "namaAnak4": "-",
+      "namaAnak5": "-",
+      "namaAnak6": "-",
+      "namaIstri": "Dewi Sartika",
+      "namaIbu": "Siti Rahmah",
+      "namaBapak": "M. Yasin",
+      "noBpjs": "0002345678901",
+      "noBpjsKes": "0008765432109",
+      "noNpwp": "98.765.432.1-032.000",
+      "noRekening": "1480007654321 (Mandiri)",
+      "noKtp": "6472022008900002",
+      "noSim": "9008-5678-000034",
+      "kodeSim": "B2 Umum",
+      "doh": "15-03-2018",
+      "poh": "Samarinda",
+      "foto": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "jabatan": "Oprt. FT",
+      "password": "256771",
+      "mustChange": true,
+      "failed": 0,
+    },
+  ];
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Mandiri Fuel Enterprise',
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: Color(0xFF0F1115),
+      ),
+      home: LoginScreen(),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _idBadgeController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  String _namaOtomatis = "-";
+  String _jabatanOtomatis = "-";
+  bool _isDataValid = false;
+  bool _obscurePassword = true;
+
+  void _cekIdBadge(String idBadge) {
+    setState(() {
+      var emp = EmployeeRepository.employees.firstWhere(
+        (e) => e['id'] == idBadge,
+        orElse: () => {},
+      );
+
+      if (emp.isNotEmpty && idBadge.length == 6) {
+        int failedCount = (emp['failed'] ?? 0) as int;
+        if (failedCount >= 3) {
+          _namaOtomatis = "AKUN TERKUNCI (Hubungi Admin)";
+          _jabatanOtomatis = "-";
+          _isDataValid = false;
+        } else {
+          _namaOtomatis = emp['nama'];
+          _jabatanOtomatis = emp['jabatan'];
+          _isDataValid = true;
+        }
+      } else {
+        if (idBadge.isEmpty) {
+          _namaOtomatis = "-";
+        } else {
+          _namaOtomatis = "ID salah / Tidak ditemukan";
+        }
+        _jabatanOtomatis = "-";
+        _isDataValid = false;
+      }
+    });
+  }
+
+  void _prosesLogin() {
+    String id = _idBadgeController.text.trim();
+    String pass = _passwordController.text.trim();
+
+    var empIndex = EmployeeRepository.employees.indexWhere((e) => e['id'] == id);
+    if (empIndex == -1) return;
+
+    var emp = EmployeeRepository.employees[empIndex];
+    int failedCount = (emp['failed'] ?? 0) as int;
+
+    if (failedCount >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Akun terkunci karena 3x salah password! Harap hubungi Admin."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (emp['password'] == pass) {
+      EmployeeRepository.employees[empIndex]['failed'] = 0;
+
+      if (emp['mustChange'] == true) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChangePasswordScreen(idBadge: id),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainMenuScreen(loginId: id, nama: emp['nama'], jabatan: emp['jabatan']),
+          ),
+        );
+      }
+    } else {
+      int newFailed = failedCount + 1;
+      EmployeeRepository.employees[empIndex]['failed'] = newFailed;
+      int sisaKesempatan = 3 - newFailed;
+
+      if (sisaKesempatan <= 0) {
+        setState(() {
+          _namaOtomatis = "AKUN TERKUNCI (Hubungi Admin)";
+          _isDataValid = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password salah 3x! Akun Anda telah dikunci."), backgroundColor: Colors.red),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password salah! Sisa kesempatan: $sisaKesempatan kali"), backgroundColor: Colors.orange),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20.0),
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 400),
+            child: Card(
+              color: Color(0xFF181C24),
+              elevation: 12,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Color(0xFFF28C28), width: 1.5),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Icon(Icons.local_shipping, size: 48, color: Color(0xFFF28C28)),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "PT. MANDIRI HERINDO ADIPERKASA",
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[400]),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "LOGIN APLIKASI",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 24),
+                    TextField(
+                      controller: _idBadgeController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        labelText: "Masukkan ID Badge",
+                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        counterText: "",
+                        filled: true,
+                        fillColor: Color(0xFF101318),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFFF28C28), width: 2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.badge, color: Color(0xFFF28C28)),
+                      ),
+                      onChanged: (value) {
+                        _cekIdBadge(value.trim());
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        labelText: "Password (Default: ID Badge)",
+                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: Color(0xFF101318),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFFF28C28), width: 2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.lock, color: Color(0xFFF28C28)),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF101318),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("KARYAWAN:", style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold)),
+                          SizedBox(height: 2),
+                          Text(_namaOtomatis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _isDataValid ? Colors.white : Colors.redAccent)),
+                          Divider(height: 12, color: Colors.white10),
+                          Text("JABATAN:", style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold)),
+                          SizedBox(height: 2),
+                          Text(_jabatanOtomatis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFF28C28),
+                        disabledBackgroundColor: Colors.grey[800],
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: !_isDataValid ? null : _prosesLogin,
+                      child: Text("MASUK APLIKASI", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ChangePasswordScreen extends StatefulWidget {
+  final String idBadge;
+  ChangePasswordScreen({required this.idBadge});
+
+  @override
+  _ChangePasswordScreenState createState() => _ChangePasswordScreenState();
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final TextEditingController _newPassController = TextEditingController();
+  final TextEditingController _confirmPassController = TextEditingController();
+
+  void _simpanPasswordBaru() {
+    String newPass = _newPassController.text.trim();
+    String confirmPass = _confirmPassController.text.trim();
+
+    if (newPass.isEmpty || confirmPass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Password tidak boleh kosong!"), backgroundColor: Colors.red));
+      return;
+    }
+
+    if (newPass != confirmPass) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Konfirmasi password tidak cocok!"), backgroundColor: Colors.red));
+      return;
+    }
+
+    if (newPass == widget.idBadge) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Password baru tidak boleh sama dengan ID Badge!"), backgroundColor: Colors.orange));
+      return;
+    }
+
+    var empIndex = EmployeeRepository.employees.indexWhere((e) => e['id'] == widget.idBadge);
+    if (empIndex != -1) {
+      EmployeeRepository.employees[empIndex]['password'] = newPass;
+      EmployeeRepository.employees[empIndex]['mustChange'] = false;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Password berhasil diubah!"), backgroundColor: Colors.green));
+
+    var emp = EmployeeRepository.employees[empIndex];
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainMenuScreen(loginId: widget.idBadge, nama: emp['nama'], jabatan: emp['jabatan']),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF0F1115),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20),
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 400),
+            child: Card(
+              color: Color(0xFF181C24),
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text("UBAH PASSWORD BARU", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: _newPassController,
+                      obscureText: true,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(labelText: "Password Baru", labelStyle: TextStyle(color: Colors.grey)),
+                    ),
+                    SizedBox(height: 12),
+                    TextField(
+                      controller: _confirmPassController,
+                      obscureText: true,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(labelText: "Konfirmasi Password Baru", labelStyle: TextStyle(color: Colors.grey)),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFF28C28)),
+                      onPressed: _simpanPasswordBaru,
+                      child: Text("SIMPAN", style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MainMenuScreen extends StatelessWidget {
+  final String loginId;
+  final String nama;
+  final String jabatan;
+
+  MainMenuScreen({required this.loginId, required this.nama, required this.jabatan});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isAdmin = (jabatan.toLowerCase() == 'admin');
+
+    final List<Map<String, dynamic>> menuItems = [
+      {"title": "Data Karyawan", "icon": Icons.badge, "color": Colors.blue, "badge": isAdmin ? "Full Access" : "Self-Service"},
+      {"title": "Data Stock", "icon": Icons.warehouse, "color": Colors.orange, "badge": "Tank 01"},
+      {"title": "Data Pengeluaran", "icon": Icons.local_shipping, "color": Colors.red, "badge": "Input"},
+      {"title": "Data Penerimaan", "icon": Icons.add_box, "color": Colors.green, "badge": "Inbound"},
+      {"title": "Data Transfer Stock", "icon": Icons.sync_alt, "color": Colors.purple, "badge": "Sync"},
+      {"title": "Dashboard", "icon": Icons.analytics, "color": Colors.teal, "badge": "Live"},
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color(0xFF181C24),
+        title: Text("Mandiri Fuel System", style: TextStyle(color: Colors.white, fontSize: 16)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Color(0xFFF28C28)),
+            onPressed: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+            },
+          )
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Color(0xFF181C24),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Color(0xFFF28C28), width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.person, color: Color(0xFFF28C28), size: 32),
+                  SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(nama, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      SizedBox(height: 2),
+                      Text("ID: $loginId | Jabatan: $jabatan (${isAdmin ? 'Admin' : 'Member'})", style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            Text("MENU UTAMA", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFF28C28))),
+            SizedBox(height: 12),
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.25,
+                ),
+                itemCount: menuItems.length,
+                itemBuilder: (context, index) {
+                  final item = menuItems[index];
+                  return InkWell(
+                    onTap: () {
+                      if (item['title'] == "Data Karyawan") {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => DataKaryawanScreen(loginId: loginId, isAdmin: isAdmin)),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Membuka ${item['title']}"), duration: Duration(seconds: 1)),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF181C24),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Icon(item['icon'], size: 28, color: item['color']),
+                              Text(item['badge'], style: TextStyle(fontSize: 9, color: Colors.grey[400])),
+                            ],
+                          ),
+                          Text(item['title'], style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DataKaryawanScreen extends StatefulWidget {
+  final String loginId;
+  final bool isAdmin;
+  DataKaryawanScreen({required this.loginId, required this.isAdmin});
+
+  @override
+  _DataKaryawanScreenState createState() => _DataKaryawanScreenState();
+}
+
+class _DataKaryawanScreenState extends State<DataKaryawanScreen> {
+  void _hapusKaryawan(String id) {
+    setState(() {
+      EmployeeRepository.employees.removeWhere((e) => e['id'] == id);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Karyawan dihapus."), backgroundColor: Colors.orange));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF0F1115),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF181C24),
+        title: Text("Data Karyawan", style: TextStyle(color: Colors.white, fontSize: 16)),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: ListView.builder(
+          itemCount: EmployeeRepository.employees.length,
+          itemBuilder: (context, index) {
+            final emp = EmployeeRepository.employees[index];
+            int no = index + 1;
+            bool isMySelf = (emp['id'] == widget.loginId);
+            bool canViewDetail = widget.isAdmin || isMySelf;
+
+            return Container(
+              margin: EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: Color(0xFF181C24),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: isMySelf ? Color(0xFFF28C28).withOpacity(0.5) : Colors.white10),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Color(0xFFF28C28).withOpacity(0.2),
+                  backgroundImage: emp['foto'] != null && emp['foto'].isNotEmpty ? NetworkImage(emp['foto']) : null,
+                  child: (emp['foto'] == null || emp['foto'].isEmpty) ? Text("$no", style: TextStyle(color: Color(0xFFF28C28), fontWeight: FontWeight.bold)) : null,
+                ),
+                title: Text(emp['nama'], style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Text("ID: ${emp['id']} | NIK: ${emp['nik']} | Jabatan: ${emp['jabatan']}", style: TextStyle(color: Colors.grey[400], fontSize: 11)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    canViewDetail
+                        ? IconButton(
+                            icon: Icon(Icons.visibility, color: Colors.blueAccent),
+                            tooltip: "Lihat Data Lengkap",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailKaryawanScreen(employee: emp, no: no, isAdmin: widget.isAdmin),
+                                ),
+                              );
+                            },
+                          )
+                        : IconButton(
+                            icon: Icon(Icons.visibility_off, color: Colors.grey[700]),
+                            tooltip: "Akses Terbatas (Privasi)",
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Anda hanya dapat melihat data lengkap milik ID Badge Anda sendiri."), backgroundColor: Colors.orange),
+                              );
+                            },
+                          ),
+                    if (widget.isAdmin)
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.redAccent),
+                        tooltip: "Hapus",
+                        onPressed: () => _hapusKaryawan(emp['id']),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class DetailKaryawanScreen extends StatelessWidget {
+  final Map<String, dynamic> employee;
+  final int no;
+  final bool isAdmin;
+
+  DetailKaryawanScreen({required this.employee, required this.no, required this.isAdmin});
+
+  Widget _buildRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 150, child: Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold))),
+          Text(":", style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          SizedBox(width: 10),
+          Expanded(child: Text(value.isNotEmpty ? value : "-", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> children) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFF181C24),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: Color(0xFFF28C28), fontSize: 14, fontWeight: FontWeight.bold)),
+          Divider(color: Colors.white24, height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF0F1115),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF181C24),
+        title: Text("Detail Karyawan: ${employee['nama']}", style: TextStyle(color: Colors.white, fontSize: 15)),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Color(0xFFF28C28), width: 2),
+                      image: employee['foto'] != null && employee['foto'].isNotEmpty
+                          ? DecorationImage(image: NetworkImage(employee['foto']), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: (employee['foto'] == null || employee['foto'].isEmpty)
+                        ? Icon(Icons.person, size: 50, color: Colors.grey)
+                        : null,
+                  ),
+                  SizedBox(height: 8),
+                  Text(employee['nama'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text("ID: ${employee['id']} | Jabatan: ${employee['jabatan']}", style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                  SizedBox(height: 16),
+                ],
+              ),
+            ),
+            _buildSection("I. IDENTITAS UTAMA", [
+              _buildRow("NO", "$no"),
+              _buildRow("NIK", employee['nik']),
+              _buildRow("ID BADGE", employee['id']),
+              _buildRow("NAMA LENGKAP", employee['nama']),
+              _buildRow("TTL", employee['ttl']),
+              _buildRow("JENIS KELAMIN", employee['jenisKelamin']),
+              _buildRow("ALAMAT", employee['alamat']),
+              _buildRow("SUKU", employee['suku']),
+              _buildRow("AGAMA", employee['agama']),
+              _buildRow("KEBANGSAAN", employee['kebangsaan']),
+            ]),
+            _buildSection("II. DATA KELUARGA", [
+              _buildRow("STATUS PERKAWINAN", employee['statusPerkawinan']),
+              _buildRow("STATUS SEKOLAH / PENDIDIKAN", employee['statusSekolah']),
+              _buildRow("NAMA ISTRI", employee['namaIstri']),
+              _buildRow("NAMA IBU", employee['namaIbu']),
+              _buildRow("NAMA BAPAK", employee['namaBapak']),
+              _buildRow("NAMA ANAK 1", employee['namaAnak1']),
+              _buildRow("NAMA ANAK 2", employee['namaAnak2']),
+              _buildRow("NAMA ANAK 3", employee['namaAnak3']),
+              _buildRow("NAMA ANAK 4", employee['namaAnak4']),
+              _buildRow("NAMA ANAK 5", employee['namaAnak5']),
+              _buildRow("NAMA ANAK 6", employee['namaAnak6']),
+            ]),
+            _buildSection("III. LEGALITAS & KEUANGAN", [
+              _buildRow("NO KTP", employee['noKtp']),
+              _buildRow("NO NPWP", employee['noNpwp']),
+              _buildRow("NO SIM", employee['noSim']),
+              _buildRow("KODE SIM", employee['kodeSim']),
+              _buildRow("NO BPJS KETENAGAKERJAAN", employee['noBpjs']),
+              _buildRow("NO BPJS KESEHATAN", employee['noBpjsKes']),
+              _buildRow("NO REKENING", employee['noRekening']),
+            ]),
+            _buildSection("IV. DATA KEPEGAWAIAN", [
+              _buildRow("JABATAN", employee['jabatan']),
+              _buildRow("DOH (Date of Hire)", employee['doh']),
+              _buildRow("POH (Point of Hire)", employee['poh']),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
